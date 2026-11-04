@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - Inventory Control System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Inventory UI</h2>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="suppliers.html">Suppliers</a></li>
+          <li><a href="reports.html" class="active">Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="flex-between" style="width: 100%;">
+          <h2 style="margin: 0;">Inventory Log Reports</h2>
+          <div>
+            <span id="usernameDisplay" style="margin-right: var(--space-2); font-weight: 500;">User</span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-area animate-fade-in">
+        <article class="card">
+          <div class="flex-between mb-3">
+            <h3>Recent Activity (Max 100)</h3>
+            <button onclick="window.print()" class="btn btn-primary">Print Report</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Log ID</th>
+                  <th>Date</th>
+                  <th>User</th>
+                  <th>Product (SKU)</th>
+                  <th>Action</th>
+                  <th>Quantity</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody">
+                <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const logs = await ApiService.getInventoryLogs();
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '';
+
+        if (logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No activity logged yet</td></tr>';
+          return;
+        }
+
+        logs.forEach(log => {
+          const tr = document.createElement('tr');
+          const date = new Date(log.created_at).toLocaleString();
+          let actionBadge = '';
+          if (log.action === 'added') actionBadge = '<span class="badge badge-success">Added</span>';
+          else if (log.action === 'removed') actionBadge = '<span class="badge badge-danger">Removed</span>';
+          else actionBadge = '<span class="badge" style="background:var(--color-primary); color:white;">Adjusted</span>';
+
+          tr.innerHTML = `
+            <td>#${log.id}</td>
+            <td>${date}</td>
+            <td>${log.username || 'System'}</td>
+            <td>${log.product_name} <small style="color:var(--color-text-muted)">(${log.product_sku})</small></td>
+            <td>${actionBadge}</td>
+            <td>${log.quantity}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error(error);
+        document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--color-danger);">Error loading report data</td></tr>';
+      }
+    });
+  </script>
+</body>
+</html>

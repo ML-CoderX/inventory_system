@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Inventory Control System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Inventory UI</h2>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html" class="active">Dashboard</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="suppliers.html">Suppliers</a></li>
+          <li><a href="reports.html">Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="flex-between" style="width: 100%;">
+          <h2 style="margin: 0;">Dashboard</h2>
+          <div>
+            <span id="usernameDisplay" style="margin-right: var(--space-2); font-weight: 500;">User</span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-area animate-fade-in">
+        
+        <div class="grid-cards">
+          <article class="card">
+            <h3 class="form-label">Total Products</h3>
+            <div id="totalProducts" class="stat-value">0</div>
+          </article>
+          <article class="card">
+            <h3 class="form-label">Total Suppliers</h3>
+            <div id="totalSuppliers" class="stat-value">0</div>
+          </article>
+          <article class="card">
+            <h3 class="form-label">Total Stock Value</h3>
+            <div id="totalStockValue" class="stat-value text-success">₹0.00</div>
+          </article>
+          <article class="card">
+            <h3 class="form-label">Low Stock Alerts</h3>
+            <div id="lowStockAlerts" class="stat-value text-danger">0</div>
+          </article>
+        </div>
+
+        <article class="card">
+          <div class="flex-between mb-3">
+            <h3>Low Stock Products</h3>
+            <a href="products.html" class="btn btn-primary">Manage Products</a>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Product Name</th>
+                  <th>Current Stock</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="lowStockTableBody">
+                <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const stats = await ApiService.getDashboardStats();
+        
+        document.getElementById('totalProducts').textContent = stats.totalProducts;
+        document.getElementById('totalSuppliers').textContent = stats.totalSuppliers;
+        document.getElementById('totalStockValue').textContent = '₹' + parseFloat(stats.totalStockValue).toFixed(2);
+        document.getElementById('lowStockAlerts').textContent = stats.lowStockAlertsCount;
+
+        const tbody = document.getElementById('lowStockTableBody');
+        tbody.innerHTML = '';
+
+        if (stats.lowStockProducts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--color-text-muted);">No low stock items</td></tr>';
+        } else {
+          stats.lowStockProducts.forEach(product => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>#${product.id}</td>
+              <td>${product.name}</td>
+              <td><span class="badge badge-danger">${product.stock_quantity}</span></td>
+              <td><a href="products.html?id=${product.id}" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.8rem;">Update</a></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        if (error.message.includes('Unexpected token')) return; // ignore HTML parse errs if logged out
+        document.getElementById('lowStockTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--color-danger);">Error loading dashboard data</td></tr>';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Management - Inventory Control System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Premium switch styles for permissions */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-1) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .switch-container:last-child {
+      border-bottom: none;
+    }
+    .switch-label-desc {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    /* Dynamic grid alignment for the form switches */
+    .permissions-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      margin-bottom: var(--space-3);
+      background-color: rgba(0, 0, 0, 0.15);
+      padding: var(--space-2);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Inventory UI</h2>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="suppliers.html">Suppliers</a></li>
+          <li><a href="reports.html">Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="flex-between" style="width: 100%;">
+          <h2 style="margin: 0;">Staff Management</h2>
+          <div>
+            <span id="usernameDisplay" style="margin-right: var(--space-2); font-weight: 500;">Admin</span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-area animate-fade-in">
+        <article class="card">
+          <div class="flex-between mb-3">
+            <h3>Staff Accounts</h3>
+            <button id="addStaffBtn" class="btn btn-primary">Create Staff Account</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Manage Products</th>
+                  <th>Manage Suppliers</th>
+                  <th>Manage Stock</th>
+                  <th>View Reports</th>
+                  <th>Delete Records</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staffTableBody">
+                <tr><td colspan="8" style="text-align:center;">Loading staff accounts...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <!-- Create Staff Dialog -->
+  <dialog id="createStaffModal">
+    <div class="dialog-header">
+      <h3>Create Staff Account</h3>
+      <button class="close-dialog" id="closeCreateModalBtn">&times;</button>
+    </div>
+    <form id="createStaffForm">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="csUsername" class="form-control" placeholder="e.g. john_staff" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="csPassword" class="form-control" placeholder="Enter temporary password" required>
+      </div>
+      
+      <h4 style="margin-bottom: var(--space-1); font-size: 0.95rem;">Grant Granular Permissions</h4>
+      <div class="permissions-grid">
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Manage Products</span>
+            <div class="switch-label-desc">Create, Edit, and Delete products</div>
+          </div>
+          <input type="checkbox" id="csManageProducts" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Manage Suppliers</span>
+            <div class="switch-label-desc">Create, Edit, and Delete suppliers</div>
+          </div>
+          <input type="checkbox" id="csManageSuppliers" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Manage Stock</span>
+            <div class="switch-label-desc">Add, Remove, or Adjust stock levels</div>
+          </div>
+          <input type="checkbox" id="csManageStock" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">View Reports</span>
+            <div class="switch-label-desc">Read transactions and audit logs</div>
+          </div>
+          <input type="checkbox" id="csViewReports" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Delete Records</span>
+            <div class="switch-label-desc">Delete products and suppliers</div>
+          </div>
+          <input type="checkbox" id="csDeleteItems" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+      </div>
+
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelCreateBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Edit Staff Permissions Dialog -->
+  <dialog id="editStaffModal">
+    <div class="dialog-header">
+      <h3 id="editModalTitle">Edit Permissions</h3>
+      <button class="close-dialog" id="closeEditModalBtn">&times;</button>
+    </div>
+    <form id="editStaffForm">
+      <input type="hidden" id="esStaffId">
+      
+      <div class="permissions-grid">
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Manage Products</span>
+            <div class="switch-label-desc">Create, Edit, and Delete products</div>
+          </div>
+          <input type="checkbox" id="esManageProducts" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Manage Suppliers</span>
+            <div class="switch-label-desc">Create, Edit, and Delete suppliers</div>
+          </div>
+          <input type="checkbox" id="esManageSuppliers" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Manage Stock</span>
+            <div class="switch-label-desc">Add, Remove, or Adjust stock levels</div>
+          </div>
+          <input type="checkbox" id="esManageStock" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">View Reports</span>
+            <div class="switch-label-desc">Read transactions and audit logs</div>
+          </div>
+          <input type="checkbox" id="esViewReports" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+        <div class="switch-container">
+          <div>
+            <span style="font-weight: 500; font-size: 0.9rem;">Delete Records</span>
+            <div class="switch-label-desc">Delete products and suppliers</div>
+          </div>
+          <input type="checkbox" id="esDeleteItems" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+      </div>
+
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelEditBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Change Staff Password Dialog -->
+  <dialog id="changeStaffPasswordModal">
+    <div class="dialog-header">
+      <h3 id="cpStaffModalTitle">Change Staff Password</h3>
+      <button class="close-dialog" id="closeCpStaffModalBtn">&times;</button>
+    </div>
+    <form id="changeStaffPasswordForm">
+      <input type="hidden" id="cpStaffId">
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" id="cpStaffNewPassword" class="form-control" required minlength="6" placeholder="Enter new password (min 6 characters)">
+      </div>
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelCpStaffBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Password</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const createModal = document.getElementById('createStaffModal');
+    const editModal = document.getElementById('editStaffModal');
+    const cpStaffModal = document.getElementById('changeStaffPasswordModal');
+    const createForm = document.getElementById('createStaffForm');
+    const editForm = document.getElementById('editStaffForm');
+    const cpStaffForm = document.getElementById('changeStaffPasswordForm');
+
+    let allStaffCached = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStaff();
+
+      // Trigger Create Dialog
+      document.getElementById('addStaffBtn').addEventListener('click', () => {
+        createForm.reset();
+        createModal.showModal();
+      });
+
+      // Dialog Close Buttons
+      document.getElementById('closeCreateModalBtn').addEventListener('click', () => createModal.close());
+      document.getElementById('cancelCreateBtn').addEventListener('click', () => createModal.close());
+
+      document.getElementById('closeEditModalBtn').addEventListener('click', () => editModal.close());
+      document.getElementById('cancelEditBtn').addEventListener('click', () => editModal.close());
+
+      document.getElementById('closeCpStaffModalBtn').addEventListener('click', () => cpStaffModal.close());
+      document.getElementById('cancelCpStaffBtn').addEventListener('click', () => cpStaffModal.close());
+
+      // Create Staff Submit
+      createForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+          username: document.getElementById('csUsername').value.trim(),
+          password: document.getElementById('csPassword').value,
+          can_manage_products: document.getElementById('csManageProducts').checked,
+          can_manage_suppliers: document.getElementById('csManageSuppliers').checked,
+          can_manage_stock: document.getElementById('csManageStock').checked,
+          can_view_reports: document.getElementById('csViewReports').checked,
+          can_delete_items: document.getElementById('csDeleteItems').checked
+        };
+
+        try {
+          await ApiService.createStaffUser(data);
+          createModal.close();
+          loadStaff();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      // Edit Staff Submit
+      editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('esStaffId').value;
+        const data = {
+          can_manage_products: document.getElementById('esManageProducts').checked,
+          can_manage_suppliers: document.getElementById('esManageSuppliers').checked,
+          can_manage_stock: document.getElementById('esManageStock').checked,
+          can_view_reports: document.getElementById('esViewReports').checked,
+          can_delete_items: document.getElementById('esDeleteItems').checked
+        };
+
+        try {
+          await ApiService.updateStaffUser(id, data);
+          editModal.close();
+          loadStaff();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      // Change Staff Password Submit
+      cpStaffForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('cpStaffId').value;
+        const newPassword = document.getElementById('cpStaffNewPassword').value;
+
+        try {
+          await ApiService.changeStaffPassword(id, newPassword);
+          cpStaffModal.close();
+          alert('Staff password updated successfully!');
+          loadStaff();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+
+    async function loadStaff() {
+      try {
+        const staff = await ApiService.getStaffUsers();
+        allStaffCached = staff;
+        const tbody = document.getElementById('staffTableBody');
+        tbody.innerHTML = '';
+
+        if (staff.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No staff accounts found. Create one to begin.</td></tr>';
+          return;
+        }
+
+        staff.forEach(u => {
+          const tr = document.createElement('tr');
+          
+          const pProducts = u.can_manage_products ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>';
+          const pSuppliers = u.can_manage_suppliers ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>';
+          const pStock = u.can_manage_stock ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>';
+          const pReports = u.can_view_reports ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>';
+          const pDelete = u.can_delete_items ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-danger">Disabled</span>';
+
+          tr.innerHTML = `
+            <td>${u.id}</td>
+            <td><strong>${u.username}</strong></td>
+            <td>${pProducts}</td>
+            <td>${pSuppliers}</td>
+            <td>${pStock}</td>
+            <td>${pReports}</td>
+            <td>${pDelete}</td>
+            <td>
+              <button class="btn btn-primary btn-icon" onclick="openEditModal(${u.id})" title="Edit Permissions">✏️</button>
+              <button class="btn btn-warning btn-icon" onclick="openCpStaffModal(${u.id})" title="Change Password" style="margin-left: 2px; margin-right: 2px;">🔑</button>
+              <button class="btn btn-danger btn-icon" onclick="deleteStaff(${u.id})" title="Delete Account">🗑️</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error(error);
+        document.getElementById('staffTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--color-danger);">Error loading staff accounts.</td></tr>';
+      }
+    }
+
+    function openEditModal(id) {
+      const u = allStaffCached.find(item => item.id === id);
+      if (!u) return;
+
+      document.getElementById('editModalTitle').textContent = `Edit Permissions: ${u.username}`;
+      document.getElementById('esStaffId').value = u.id;
+      document.getElementById('esManageProducts').checked = u.can_manage_products === 1;
+      document.getElementById('esManageSuppliers').checked = u.can_manage_suppliers === 1;
+      document.getElementById('esManageStock').checked = u.can_manage_stock === 1;
+      document.getElementById('esViewReports').checked = u.can_view_reports === 1;
+      document.getElementById('esDeleteItems').checked = u.can_delete_items === 1;
+
+      editModal.showModal();
+    }
+
+    function openCpStaffModal(id) {
+      const u = allStaffCached.find(item => item.id === id);
+      if (!u) return;
+
+      document.getElementById('cpStaffModalTitle').textContent = `Change Staff Password: ${u.username}`;
+      document.getElementById('cpStaffId').value = u.id;
+      document.getElementById('cpStaffNewPassword').value = '';
+      cpStaffModal.showModal();
+    }
+
+    async function deleteStaff(id) {
+      const u = allStaffCached.find(item => item.id === id);
+      if (!u) return;
+
+      if (confirm(`Are you sure you want to delete the staff account "${u.username}"?`)) {
+        try {
+          await ApiService.deleteStaffUser(id);
+          loadStaff();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

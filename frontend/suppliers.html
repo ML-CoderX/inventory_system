@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suppliers - Inventory Control System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Inventory UI</h2>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="suppliers.html" class="active">Suppliers</a></li>
+          <li><a href="reports.html">Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="flex-between" style="width: 100%;">
+          <h2 style="margin: 0;">Suppliers</h2>
+          <div>
+            <span id="usernameDisplay" style="margin-right: var(--space-2); font-weight: 500;">User</span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-area animate-fade-in">
+        <article class="card">
+          <div class="flex-between mb-3">
+            <h3>All Suppliers</h3>
+            <button id="addSupplierBtn" class="btn btn-primary">Add Supplier</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="suppliersTableBody">
+                <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="supplierModal">
+    <div class="dialog-header">
+      <h3 id="modalTitle">Add Supplier</h3>
+      <button class="close-dialog" id="closeModalBtn">&times;</button>
+    </div>
+    <form id="supplierForm">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" id="sName" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="sEmail" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="text" id="sPhone" class="form-control">
+      </div>
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Supplier</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const modal = document.getElementById('supplierModal');
+    const form = document.getElementById('supplierForm');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSuppliers();
+
+      document.getElementById('addSupplierBtn').addEventListener('click', () => {
+        form.reset();
+        modal.showModal();
+      });
+
+      document.getElementById('closeModalBtn').addEventListener('click', () => modal.close());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.close());
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+          name: document.getElementById('sName').value,
+          contact_email: document.getElementById('sEmail').value,
+          contact_phone: document.getElementById('sPhone').value,
+        };
+
+        try {
+          await ApiService.createSupplier(data);
+          modal.close();
+          loadSuppliers();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+
+    async function loadSuppliers() {
+      try {
+        const suppliers = await ApiService.getSuppliers();
+        const tbody = document.getElementById('suppliersTableBody');
+        tbody.innerHTML = '';
+
+        if (suppliers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No suppliers found</td></tr>';
+          return;
+        }
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const isAdmin = user.role === 'admin';
+
+        suppliers.forEach(s => {
+          const tr = document.createElement('tr');
+          
+          const canDeleteItems = isAdmin || user.can_delete_items;
+
+          const deleteBtn = canDeleteItems 
+            ? `<button class="btn btn-danger btn-icon" onclick="deleteSupplier(${s.id})" title="Delete">🗑️</button>` 
+            : '';
+
+          tr.innerHTML = `
+            <td>${s.id}</td>
+            <td>${s.name}</td>
+            <td>${s.contact_email || '-'}</td>
+            <td>${s.contact_phone || '-'}</td>
+            <td>
+              ${deleteBtn}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function deleteSupplier(id) {
+      if(confirm('Delete this supplier? Associated products will have null supplier.')) {
+        try {
+          await ApiService.deleteSupplier(id);
+          loadSuppliers();
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Control System - Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="login-container">
+    <section class="login-card animate-fade-in">
+      <h1 class="login-title">Inventory Control</h1>
+      
+      <!-- Login Section -->
+      <div id="loginSection">
+        <p style="text-align:center; color:var(--color-text-muted); margin-bottom: var(--space-4);">Sign in to your inventory system</p>
+        
+        <div id="loginError" class="badge badge-danger hidden" style="margin-bottom: var(--space-3); display: block; text-align: center; padding: var(--space-1);"></div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" id="username" class="form-control" required placeholder="Enter your username">
+          </div>
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" class="form-control" required placeholder="Enter your password">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-2);">Login</button>
+        </form>
+        <p style="text-align:center; margin-top: var(--space-3); font-size: 0.9rem; color: var(--color-text-muted);">
+          Want to host another shop? <a href="#" id="openRegisterModal" style="font-weight: 500; color: var(--color-primary);">Create New Shop Database</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Register Shop Dialog -->
+  <dialog id="registerShopModal">
+    <div class="dialog-header">
+      <h3>Register New Shop Database</h3>
+      <button class="close-dialog" id="closeRegisterModalBtn">&times;</button>
+    </div>
+    <form id="registerForm">
+      <div id="registerError" class="badge badge-danger hidden" style="margin-bottom: var(--space-3); display: block; text-align: center; padding: var(--space-1);"></div>
+      <div id="registerSuccess" class="badge badge-success hidden" style="margin-bottom: var(--space-3); display: block; text-align: center; padding: var(--space-1);"></div>
+      
+      <div class="form-group">
+        <label for="regShop" class="form-label">Shop Name</label>
+        <input type="text" id="regShop" class="form-control" required placeholder="e.g. Main Supermarket">
+      </div>
+      <div class="form-group">
+        <label for="regUsername" class="form-label">Admin Username</label>
+        <input type="text" id="regUsername" class="form-control" required placeholder="e.g. super_admin">
+      </div>
+      <div class="form-group">
+        <label for="regPassword" class="form-label">Admin Password</label>
+        <input type="password" id="regPassword" class="form-control" required minlength="6" placeholder="At least 6 characters">
+      </div>
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelRegisterBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Database & Register</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products - Inventory Control System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>Inventory UI</h2>
+      </div>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">Dashboard</a></li>
+          <li><a href="products.html" class="active">Products</a></li>
+          <li><a href="suppliers.html">Suppliers</a></li>
+          <li><a href="reports.html">Reports</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="flex-between" style="width: 100%;">
+          <h2 style="margin: 0;">Products Management</h2>
+          <div>
+            <span id="usernameDisplay" style="margin-right: var(--space-2); font-weight: 500;">User</span>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="content-area animate-fade-in">
+        
+        <article class="card">
+          <div class="flex-between mb-3">
+            <div>
+              <input type="text" id="searchInput" class="form-control" placeholder="Search by name or SKU..." style="width: 300px;">
+            </div>
+            <button id="addProductBtn" class="btn btn-primary">Add New Product</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>SKU</th>
+                  <th>Name</th>
+                  <th>Supplier</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody">
+                <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <!-- Product Modal -->
+  <dialog id="productModal">
+    <div class="dialog-header">
+      <h3 id="modalTitle">Add Product</h3>
+      <button class="close-dialog" id="closeModalBtn">&times;</button>
+    </div>
+    <form id="productForm">
+      <input type="hidden" id="productId">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" id="pName" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SKU</label>
+        <input type="text" id="pSku" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Price</label>
+        <input type="number" id="pPrice" class="form-control" step="0.01" min="0" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Supplier ID (Optional)</label>
+        <input type="number" id="pSupplier" class="form-control" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="pDesc" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Product</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Stock Modal -->
+  <dialog id="stockModal">
+    <div class="dialog-header">
+      <h3>Update Stock</h3>
+      <button class="close-dialog" id="closeStockModalBtn">&times;</button>
+    </div>
+    <form id="stockForm">
+      <input type="hidden" id="stockProductId">
+      <div class="form-group">
+        <label class="form-label">Action</label>
+        <select id="stockAction" class="form-control" required>
+          <option value="added">Add Stock</option>
+          <option value="removed">Remove Stock</option>
+          <option value="adjusted">Adjust to Exact Amount</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input type="number" id="stockQuantity" class="form-control" min="1" required>
+      </div>
+      <div class="flex-between mt-2">
+        <button type="button" class="btn btn-danger" id="cancelStockBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Stock</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let searchTimeout;
+    const modal = document.getElementById('productModal');
+    const stockModal = document.getElementById('stockModal');
+    const form = document.getElementById('productForm');
+    const stockForm = document.getElementById('stockForm');
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProducts();
+
+      // Search debounce
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadProducts(e.target.value), 500);
+      });
+
+      // Modal Triggers
+      document.getElementById('addProductBtn').addEventListener('click', () => {
+        document.getElementById('modalTitle').textContent = 'Add Product';
+        form.reset();
+        document.getElementById('productId').value = '';
+        modal.showModal();
+      });
+
+      document.getElementById('closeModalBtn').addEventListener('click', () => modal.close());
+      document.getElementById('cancelBtn').addEventListener('click', () => modal.close());
+      
+      document.getElementById('closeStockModalBtn').addEventListener('click', () => stockModal.close());
+      document.getElementById('cancelStockBtn').addEventListener('click', () => stockModal.close());
+
+      // Form Submit
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('productId').value;
+        const data = {
+          name: document.getElementById('pName').value,
+          sku: document.getElementById('pSku').value,
+          price: document.getElementById('pPrice').value,
+          supplier_id: document.getElementById('pSupplier').value || null,
+          description: document.getElementById('pDesc').value
+        };
+
+        if (parseFloat(data.price) < 0) {
+          alert('Price cannot be negative');
+          return;
+        }
+
+        if (data.supplier_id && parseInt(data.supplier_id, 10) < 0) {
+          alert('Supplier ID cannot be negative');
+          return;
+        }
+
+        try {
+          if (id) await ApiService.updateProduct(id, data);
+          else await ApiService.createProduct(data);
+          modal.close();
+          loadProducts(document.getElementById('searchInput').value);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      // Stock Form Submit
+      stockForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('stockProductId').value;
+        const action = document.getElementById('stockAction').value;
+        const qty = document.getElementById('stockQuantity').value;
+
+        if (parseInt(qty, 10) < 1) {
+          alert('Quantity must be at least 1');
+          return;
+        }
+
+        try {
+          await ApiService.updateStock(id, action, qty);
+          stockModal.close();
+          loadProducts(document.getElementById('searchInput').value);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+
+    async function loadProducts(search = '') {
+      try {
+        const products = await ApiService.getProducts(search);
+        const tbody = document.getElementById('productsTableBody');
+        tbody.innerHTML = '';
+
+        if (products.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No products found</td></tr>';
+          return;
+        }
+
+        products.forEach(p => {
+          const tr = document.createElement('tr');
+          const isLow = p.stock_quantity <= 10;
+          
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          const isAdmin = user.role === 'admin';
+          const canManageProducts = isAdmin || user.can_manage_products;
+          const canManageStock = isAdmin || user.can_manage_stock;
+          const canDeleteItems = isAdmin || user.can_delete_items;
+
+          const stockBtn = canManageStock 
+            ? `<button class="btn btn-primary btn-icon" onclick="openStockModal(${p.id})" title="Update Stock">📦</button>` 
+            : '';
+          const editBtn = canManageProducts 
+            ? `<button class="btn btn-primary btn-icon" onclick="editProduct(${p.id})" title="Edit">✏️</button>` 
+            : '';
+          const deleteBtn = canDeleteItems 
+            ? `<button class="btn btn-danger btn-icon" onclick="deleteProduct(${p.id})" title="Delete">🗑️</button>` 
+            : '';
+
+          tr.innerHTML = `
+            <td>${p.id}</td>
+            <td>${p.sku}</td>
+            <td>${p.name}</td>
+            <td>${p.supplier_name || 'N/A'}</td>
+            <td>₹${parseFloat(p.price).toFixed(2)}</td>
+            <td><span class="badge ${isLow ? 'badge-danger' : 'badge-success'}">${p.stock_quantity}</span></td>
+            <td>
+              ${stockBtn}
+              ${editBtn}
+              ${deleteBtn}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function editProduct(id) {
+      try {
+        const p = await ApiService.getProduct(id);
+        document.getElementById('modalTitle').textContent = 'Edit Product';
+        document.getElementById('productId').value = p.id;
+        document.getElementById('pName').value = p.name;
+        document.getElementById('pSku').value = p.sku;
+        document.getElementById('pPrice').value = p.price;
+        document.getElementById('pSupplier').value = p.supplier_id || '';
+        document.getElementById('pDesc').value = p.description || '';
+        modal.showModal();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    async function deleteProduct(id) {
+      if(confirm('Are you sure you want to delete this product?')) {
+        try {
+          await ApiService.deleteProduct(id);
+          loadProducts();
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+    }
+
+    function openStockModal(id) {
+      document.getElementById('stockForm').reset();
+      document.getElementById('stockProductId').value = id;
+      stockModal.showModal();
+    }
+  </script>
+</body>
+</html>
